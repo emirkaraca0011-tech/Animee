@@ -10,11 +10,11 @@ st.write("YouTube linkini yapıştırın; video 1:1 kare yapılsın, sesi silins
 
 url = st.text_input("YouTube Video Linki:")
 
-if st.button("Videoyu İşle و Böl"):
+if st.button("Videoyu İşle ve Böl"):
     if not url:
         st.warning("Lütfen geçerli bir YouTube linki girin.")
     else:
-        with st.spinner("Video en güncel altyapıyla indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
+        with st.spinner("Video indiriliyor, sahnelerine ayrılıyor... Lütfen bekleyin."):
             work_dir = "temp_space"
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir)
@@ -23,7 +23,7 @@ if st.button("Videoyu İşle و Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # yt-dlp ile YouTube engellerini aşan en güncel ve kararlı ayarlar
+                # YouTube 403 ve bot engellerini tamamen bypass eden güncel yt-dlp parametreleri
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'outtmpl': input_file,
