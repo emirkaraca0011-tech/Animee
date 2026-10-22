@@ -1,6 +1,4 @@
 streamlit
 scenedetect
 opencv-python-headless
-requests
 flask
-
