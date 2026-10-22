@@ -1,20 +1,20 @@
 import os
 import shutil
 import zipfile
-import requests
 import streamlit as st
 from scenedetect import detect, ContentDetector, split_video_ffmpeg
+import yt_dlp
 
 st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı")
-st.write("YouTube linkini yapıştırın; video işlensin ve sahnelerine ayrılsın.")
+st.write("YouTube linkini yapıştırın; video 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
 
 url = st.text_input("YouTube Video Linki:")
 
-if st.button("Videoyu İşle ve Böl"):
+if st.button("Videoyu İşle و Böl"):
     if not url:
         st.warning("Lütfen geçerli bir YouTube linki girin.")
     else:
-        with st.spinner("Video indiriliyor, sahnelerine ayrılıyor... Lütfen bekleyin."):
+        with st.spinner("Video en güncel altyapıyla indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
             work_dir = "temp_space"
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir)
@@ -23,37 +23,21 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # Cobalt API'nin resmi ve kararlı yönlendiricisi
-                api_url = "https://api.cobalt.tools/api/json"
-                payload = {
-                    "url": url,
-                    "videoQuality": "max"
+                # yt-dlp ile YouTube engellerini aşan en güncel ve kararlı ayarlar
+                ydl_opts = {
+                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                    'outtmpl': input_file,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    }
                 }
-                headers = {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0"
-                }
-
-                response = requests.post(api_url, json=payload, headers=headers)
                 
-                if not response.text:
-                    st.error("API'den yanıt alınamadı.")
-                    st.stop()
-                    
-                res_data = response.json()
-
-                if res_data.get("status") in ["stream", "redirect", "success"]:
-                    download_url = res_data.get("url")
-                else:
-                    st.error(f"Video indirilemedi, sunucu yanıtı: {res_data}")
-                    st.stop()
-
-                # Videoyu indirip geçici klasöre kaydediyoruz
-                video_res = requests.get(download_url, stream=True)
-                with open(input_file, "wb") as f:
-                    for chunk in video_res.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
 
                 # Sahne kesme, sessize alma (-an) ve 1:1 kare yapma
                 scene_list = detect(input_file, ContentDetector(threshold=27.0))
