@@ -23,14 +23,22 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
+                # YouTube 403 engelini aşmak için güncel tarayıcı başlıkları (User-Agent) eklendi
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'outtmpl': input_file,
                     'quiet': True,
+                    'socket_timeout': 30,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    }
                 }
+                
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
 
+                # Sahne kesme, sessize alma (-an) ve 1:1 kare yapma
                 scene_list = detect(input_file, ContentDetector(threshold=27.0))
                 output_template = os.path.join(work_dir, "scene_$THREE_DIGIT_REG.mp4")
                 
@@ -41,6 +49,7 @@ if st.button("Videoyu İşle ve Böl"):
                     ffmpeg_args='-vf "crop=ih:ih:(iw-ih)/2:0" -an -c:v libx264 -crf 18 -preset fast'
                 )
 
+                # Klipleri ZIP dosyası haline getirme
                 zip_path = "anime_clips.zip"
                 with zipfile.ZipFile(zip_path, 'w') as zipf:
                     for root, dirs, files in os.walk(work_dir):
