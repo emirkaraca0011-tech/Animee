@@ -1,8 +1,9 @@
 import os
 import shutil
 import zipfile
+import subprocess
 import streamlit as st
-from scenedetect import detect, ContentDetector, split_video_ffmpeg
+from scenedetect import detect, ContentDetector
 
 st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı")
 st.write("İstediğiniz video dosyasını yükleyin; 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
@@ -24,16 +25,30 @@ if uploaded_file is not None:
                 f.write(uploaded_file.getbuffer())
 
             try:
-                # Sahne kesme, sessize alma (-an) ve 1:1 kare yapma
+                # Sahne tespiti
                 scene_list = detect(input_file, ContentDetector(threshold=27.0))
-                output_template = os.path.join(work_dir, "scene_$THREE_DIGIT_REG.mp4")
                 
-                split_video_ffmpeg(
-                    input_file,
-                    scene_list,
-                    output_file_template=output_template,
-                    ffmpeg_args='-vf "crop=ih:ih:(iw-ih)/2:0" -an -c:v libx264 -crf 18 -preset fast'
-                )
+                # Her sahneyi tek tek FFmpeg ile kesip 1:1 kare ve sessiz hale getiriyoruz
+                for i, scene in enumerate(scene_list):
+                    start_time = scene[0].get_seconds()
+                    end_time = scene[1].get_seconds()
+                    duration = end_time - start_time
+                    
+                    output_file = os.path.join(work_dir, f"scene_{i+1:03d}.mp4")
+                    
+                    cmd = [
+                        'ffmpeg', '-y',
+                        '-ss', str(start_time),
+                        '-i', input_file,
+                        '-t', str(duration),
+                        '-vf', 'crop=ih:ih:(iw-ih)/2:0',
+                        '-an',
+                        '-c:v', 'libx264',
+                        '-crf', '18',
+                        '-preset', 'fast',
+                        output_file
+                    ]
+                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
                 # Klipleri ZIP dosyası haline getirme
                 zip_path = "anime_clips.zip"
