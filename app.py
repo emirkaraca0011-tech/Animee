@@ -1,12 +1,12 @@
 import os
 import shutil
 import zipfile
+import requests
 import streamlit as st
 from scenedetect import detect, ContentDetector, split_video_ffmpeg
-import yt_dlp
 
-st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı")
-st.write("YouTube linkini yapıştırın; video 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
+st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı (Cobalt Destekli)")
+st.write("YouTube linkini yapıştırın; Cobalt üzerinden indirilsin, 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
 
 url = st.text_input("YouTube Video Linki:")
 
@@ -14,7 +14,7 @@ if st.button("Videoyu İşle ve Böl"):
     if not url:
         st.warning("Lütfen geçerli bir YouTube linki girin.")
     else:
-        with st.spinner("Video indiriliyor, sesleri siliyor ve sahnelerine ayırıyor... Bekleyin."):
+        with st.spinner("Video Cobalt ile indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
             work_dir = "temp_space"
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir)
@@ -23,21 +23,31 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # YouTube 403 ve player hatalarını aşmak için güncellenmiş yt-dlp ayarları
-                ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    'outtmpl': input_file,
-                    'quiet': True,
-                    'socket_timeout': 30,
-                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                    }
+                # Cobalt API'sine istek atıyoruz (meowing.de üzerinden)
+                cobalt_api_url = "https://meowing.de/api/json"
+                payload = {
+                    "url": url,
+                    "videoQuality": "max"
                 }
-                
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                headers = {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                }
+
+                response = requests.post(cobalt_api_url, json=payload, headers=headers)
+                res_data = response.json()
+
+                if res_data.get("status") in ["stream", "redirect", "success"]:
+                    download_url = res_data.get("url")
+                else:
+                    st.error(f"Cobalt videoyu indiremedi: {res_data}")
+                    st.stop()
+
+                # İndirilen videoyu geçici klasöre kaydediyoruz
+                video_res = requests.get(download_url, stream=True)
+                with open(input_file, "wb") as f:
+                    for chunk in video_res.iter_content(chunk_size=8192):
+                        f.write(chunk)
 
                 # Sahne kesme, sessize alma (-an) ve 1:1 kare yapma
                 scene_list = detect(input_file, ContentDetector(threshold=27.0))
