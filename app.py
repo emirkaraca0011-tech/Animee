@@ -5,8 +5,8 @@ import requests
 import streamlit as st
 from scenedetect import detect, ContentDetector, split_video_ffmpeg
 
-st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı (Cobalt Destekli)")
-st.write("YouTube linkini yapıştırın; Cobalt üzerinden indirilsin, 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
+st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı")
+st.write("YouTube linkini yapıştırın; Cobalt (Wuk) üzerinden indirilsin ve sahnelerine ayrılsın.")
 
 url = st.text_input("YouTube Video Linki:")
 
@@ -14,7 +14,7 @@ if st.button("Videoyu İşle ve Böl"):
     if not url:
         st.warning("Lütfen geçerli bir YouTube linki girin.")
     else:
-        with st.spinner("Video Cobalt ile indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
+        with st.spinner("Video Cobalt üzerinden indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
             work_dir = "temp_space"
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir)
@@ -23,8 +23,8 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # Cobalt API'sine istek atıyoruz (meowing.de üzerinden)
-                cobalt_api_url = "https://meowing.de/api/json"
+                # Alternatif Cobalt sunucusu (co.wuk.sh)
+                cobalt_api_url = "https://co.wuk.sh/api/json"
                 payload = {
                     "url": url,
                     "videoQuality": "max"
@@ -35,6 +35,12 @@ if st.button("Videoyu İşle ve Böl"):
                 }
 
                 response = requests.post(cobalt_api_url, json=payload, headers=headers)
+                
+                # Gelen yanıtın boş olup olmadığını ve JSON olup olmadığını kontrol edelim
+                if not response.text:
+                    st.error("Cobalt sunucusundan boş yanıt döndü.")
+                    st.stop()
+                    
                 res_data = response.json()
 
                 if res_data.get("status") in ["stream", "redirect", "success"]:
