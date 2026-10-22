@@ -1,0 +1,4 @@
+streamlit
+scenedetect[opencv]
+yt-dlp
+flask
