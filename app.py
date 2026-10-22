@@ -1,12 +1,12 @@
 import os
 import shutil
 import zipfile
-import requests
 import streamlit as st
 from scenedetect import detect, ContentDetector, split_video_ffmpeg
+import yt_dlp
 
 st.title("🎬 Anime Twixtor 1:1 Klipler Ayırıcı")
-st.write("YouTube linkini yapıştırın; Cobalt (Wuk) üzerinden indirilsin ve sahnelerine ayrılsın.")
+st.write("YouTube linkini yapıştırın; video 1:1 kare yapılsın, sesi silinsin ve sahnelerine ayrılsın.")
 
 url = st.text_input("YouTube Video Linki:")
 
@@ -14,7 +14,7 @@ if st.button("Videoyu İşle ve Böl"):
     if not url:
         st.warning("Lütfen geçerli bir YouTube linki girin.")
     else:
-        with st.spinner("Video Cobalt üzerinden indiriliyor, sahnelerine ayrılıyor... Bekleyin."):
+        with st.spinner("Video indiriliyor, sahnelerine ayrılıyor... Lütfen bekleyin."):
             work_dir = "temp_space"
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir)
@@ -23,37 +23,16 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # Alternatif Cobalt sunucusu (co.wuk.sh)
-                cobalt_api_url = "https://co.wuk.sh/api/json"
-                payload = {
-                    "url": url,
-                    "videoQuality": "max"
+                ydl_opts = {
+                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                    'outtmpl': input_file,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
                 }
-                headers = {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                }
-
-                response = requests.post(cobalt_api_url, json=payload, headers=headers)
                 
-                # Gelen yanıtın boş olup olmadığını ve JSON olup olmadığını kontrol edelim
-                if not response.text:
-                    st.error("Cobalt sunucusundan boş yanıt döndü.")
-                    st.stop()
-                    
-                res_data = response.json()
-
-                if res_data.get("status") in ["stream", "redirect", "success"]:
-                    download_url = res_data.get("url")
-                else:
-                    st.error(f"Cobalt videoyu indiremedi: {res_data}")
-                    st.stop()
-
-                # İndirilen videoyu geçici klasöre kaydediyoruz
-                video_res = requests.get(download_url, stream=True)
-                with open(input_file, "wb") as f:
-                    for chunk in video_res.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
 
                 # Sahne kesme, sessize alma (-an) ve 1:1 kare yapma
                 scene_list = detect(input_file, ContentDetector(threshold=27.0))
