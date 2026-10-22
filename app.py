@@ -23,14 +23,15 @@ if st.button("Videoyu İşle ve Böl"):
             input_file = os.path.join(work_dir, "input.mp4")
 
             try:
-                # YouTube 403 engelini aşmak için güncel tarayıcı başlıkları (User-Agent) eklendi
+                # YouTube 403 ve player hatalarını aşmak için güncellenmiş yt-dlp ayarları
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'outtmpl': input_file,
                     'quiet': True,
                     'socket_timeout': 30,
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
                     'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                         'Accept-Language': 'en-US,en;q=0.9',
                     }
                 }
