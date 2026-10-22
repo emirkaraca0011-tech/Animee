@@ -1,4 +1,5 @@
 streamlit
-scenedetect[opencv]
-yt-dlp --upgrade
+scenedetect
+opencv-python-headless
+yt-dlp
 flask
